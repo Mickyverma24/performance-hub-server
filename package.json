@@ -10,6 +10,8 @@
   "author": "Ravi Verma",
   "license": "ISC",
   "dependencies": {
+    "@socket.io/cluster-adapter": "^0.2.2",
+    "@socket.io/sticky": "^1.0.4",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
