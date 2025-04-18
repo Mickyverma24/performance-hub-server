@@ -79,9 +79,9 @@ const signupController = async (req, res) => {
       password: hashedPassword,
       apiKey: apiKey,
     });
-
+    // saving user in mongodb
     await newUser.save();
-
+    // authentication token 
     const auth_token = generateToken(newUser._id, expirationTime, jwt_secret)
     res.status(201).json({
       name: newUser.name,
