@@ -12,10 +12,8 @@ const app = setupExpress(); // setting up express app for handling http request
 const port = process.env.PORT || 5001;
 app.set('port', port);
 const server = http.createServer(app);
-const DB_OPTIONS = {
-    dbName: "PrefGuys"
-}
-connectToMongo(process.env.MONGODB_URI, DB_OPTIONS)
+
+connectToMongo(process.env.MONGODB_URI, JSON.parse(process.env.DB_OPTIONS))
 server.listen(port, () => {
     console.log(`SERVER IS RUNNING ON PORT NUMBER ${port}`);
 });
