@@ -5,7 +5,7 @@ const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
 require("dotenv").config();
 const numCPUs = require("os").cpus().length; // number of present thread os server.
 
-const { PORT, MONGODB_URI, DB_OPTIONS } = process.env;
+const { PORT, MONGODB_URI, DB_OPTIONS, REDIS_URL} = process.env;
 // handling any Promise rejection in whole code which is not handled.
 process.on("unhandledRejection", (err) => {
   console.log("Unhandled Rejection ", err);
@@ -32,7 +32,7 @@ if (cluster.isMaster) {
   });
 
   httpServer.listen(PORT, () => {
-    console.log("Master process is listening on the, ", port);
+    console.log("Master process is listening on the, ", PORT);
   });
 
   for (let i = 0; i < numCPUs; i++) {
@@ -44,17 +44,32 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
+  // all workers import at different threads
   console.log(`Worker ${process.pid} started`);
   const { Server } = require("socket.io");
   const { connectToMongo } = require("./config/connectToDB");
   const setupExpress = require("./config/express");
+  const socketsMain = require("./socket/socketMainController");
+  const {initRedis} = require("./config/redis")
+
+  // connecting to REDIS server
+  redisClient = initRedis(REDIS_URL)
+  
   // Connect MongoDB
   connectToMongo(MONGODB_URI, JSON.parse(DB_OPTIONS));
+
   const app = setupExpress(); // to use all the routes of http requst
   const httpServer = http.createServer(app); // for listening all http request routed from master.
+
   // Create server using Express app (shared with socket.io)
-  const io = new Server(httpServer);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      credentials: true,
+    },
+  });
   io.adapter(createAdapter());
   setupWorker(io); // Let sticky handle the connection
-  // main logic for handling multiple to-do
+  // main socket.io data reciving and accepting logic
+  socketsMain(io, redisClient);
 }
