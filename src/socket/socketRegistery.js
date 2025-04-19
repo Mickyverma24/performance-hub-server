@@ -1,4 +1,4 @@
-const Redis = require('ioredis');
+const Redis = require("ioredis");
 
 /*
   1. We will store here apikey and it's associted socket.ids of frontend to transer
@@ -32,12 +32,12 @@ class SocketRegister {
    * @param {string} apiKey
    * @returns {boolean} - true if at least one socket ID exists, false otherwise
    */
-  async has(apiKey) {
+  async has(apiKey, socketId) {
     try {
-      const count = await this.redis.scard(apiKey); // count members in the set
-      return count > 0;
+      const exists = await this.redis.sismember(apiKey, socketId); // returns 1 if present, 0 if not
+      return exists === 1;
     } catch (err) {
-      console.error("Error while checking existence:", err.message);
+      console.error("Error while checking socketId existence:", err.message);
       return false;
     }
   }

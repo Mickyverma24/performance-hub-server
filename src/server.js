@@ -50,11 +50,12 @@ if (cluster.isMaster) {
   const { connectToMongo } = require("./config/connectToDB");
   const setupExpress = require("./config/express");
   const socketsMain = require("./socket/socketMainController");
+  const SocketRegister = require("./socket/socketRegistery")
   const {initRedis} = require("./config/redis")
 
   // connecting to REDIS server
-  redisClient = initRedis(REDIS_URL)
-  
+  const redisClient = initRedis(REDIS_URL)
+  const socketRegisterClient = new SocketRegister(redisClient)
   // Connect MongoDB
   connectToMongo(MONGODB_URI, JSON.parse(DB_OPTIONS));
 
@@ -71,5 +72,5 @@ if (cluster.isMaster) {
   io.adapter(createAdapter());
   setupWorker(io); // Let sticky handle the connection
   // main socket.io data reciving and accepting logic
-  socketsMain(io, redisClient);
+  socketsMain(io, socketRegisterClient);
 }
