@@ -9,8 +9,9 @@ const Redis = require("ioredis");
 */
 
 class SocketRegister {
-  constructor(redisClient) {
+  constructor(redisClient, io) {
     this.redis = redisClient;
+    this.io = io
   }
 
   /**
@@ -21,7 +22,24 @@ class SocketRegister {
    */
   async set(apiKey, socketId) {
     try {
-      await this.redis.sadd(apiKey, socketId); // adds socketId to the set (creates set if not exists)
+      // Step 1: Get current socket IDs
+      const currentSocketIds = await this.redis.smembers(apiKey); // returns an array
+
+      // Step 2: Filter only live socket IDs
+      const validSocketIds = currentSocketIds.filter((id) =>
+        this.io.sockets.sockets.has(id)
+      );
+
+      // Step 3: Add new socketId if not already there
+      if (!validSocketIds.includes(socketId)) {
+        validSocketIds.push(socketId);
+      }
+
+      // Step 4: Replace the Redis set (delete old, add new)
+      await this.redis.del(apiKey); // clear old set
+      if (validSocketIds.length > 0) {
+        await this.redis.sadd(apiKey, ...validSocketIds);
+      }
     } catch (err) {
       console.error("Error while setting socketId:", err.message);
     }

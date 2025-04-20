@@ -35,9 +35,9 @@ if (cluster.isMaster) {
     console.log("Master process is listening on the, ", PORT);
   });
 
-  // for (let i = 0; i < numCPUs; i++) {
+  for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
-  // }
+  }
 
   cluster.on("exit", (worker) => {
     console.log(`Worker ${worker.process.pid} died`);
@@ -55,7 +55,6 @@ if (cluster.isMaster) {
 
   // connecting to REDIS server
   const redisClient = initRedis(REDIS_URL)
-  const socketRegisterClient = new SocketRegister(redisClient)
   // Connect MongoDB
   connectToMongo(MONGODB_URI, JSON.parse(DB_OPTIONS));
 
@@ -72,5 +71,7 @@ if (cluster.isMaster) {
   io.adapter(createAdapter());
   setupWorker(io); // Let sticky handle the connection
   // main socket.io data reciving and accepting logic
+  // will use redis to register socket connecitons and io for handling disconnection gracefully. 
+  const socketRegisterClient = new SocketRegister(redisClient, io)
   socketsMain(io, socketRegisterClient);
 }

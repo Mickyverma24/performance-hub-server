@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const User = require("../models/user");
 const generateToken = require("../utils/genrateToken");
@@ -103,12 +103,16 @@ const verificationController = async (req, res) => {
     const apiKey = req.headers["x-api-key"];
 
     if (!authHeader || !apiKey) {
-      return res.status(401).json({ message: "Missing authentication headers" });
+      return res
+        .status(401)
+        .json({ message: "Missing authentication headers" });
     }
 
     const authToken = authHeader.split(" ")[1];
     if (!authToken) {
-      return res.status(401).json({ message: "Invalid Authorization header format" });
+      return res
+        .status(401)
+        .json({ message: "Invalid Authorization header format" });
     }
 
     // 2. Verify JWT token
@@ -124,18 +128,23 @@ const verificationController = async (req, res) => {
     // console.log(decodedToken)
     // 3. Find and validate user
     const user = await User.findOne({
-      _id: decodedToken.userId
+      _id: decodedToken.userId,
     });
     // console.log(user)
 
     if (!user) {
-      return res.status(403).json({ message: "Invalid API key or user not active" });
+      return res
+        .status(403)
+        .json({ message: "Invalid API key or user not active" });
     }
 
     // 4. Return success
     return res.status(200).json({ message: "Authentication successful" });
   } catch (error) {
-    console.error("Unexpected error during verification:", error.stack || error.message);
+    console.error(
+      "Unexpected error during verification:",
+      error.stack || error.message
+    );
     return res.status(500).json({ message: "Internal server error" });
   }
 };

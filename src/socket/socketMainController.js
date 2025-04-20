@@ -2,7 +2,9 @@ const socketsMain = (io, socketRegisterClient) => {
   io.on("connection", async (socket) => {
     // taking auth details from socket
     const auth = socket.handshake.auth;
+    let runningMachineMacAddress;
     // validation
+    console.log(auth.clientType,auth.token)
     if (!auth.clientType || !auth.token) {
       console.log("Missing clientType or token. Disconnecting...");
       socket.disconnect();
@@ -31,7 +33,7 @@ const socketsMain = (io, socketRegisterClient) => {
     // CLI sends data to frontends matching its token
     socket.on("prefData", async (data) => {
       if (auth.clientType !== "cli") return;
-
+      if (!runningMachineMacAddress) runningMachineMacAddress = data.mac;
       const frontendSockets = await socketRegisterClient.get(auth.token);
 
       if (!frontendSockets || frontendSockets.length === 0) {
@@ -39,7 +41,7 @@ const socketsMain = (io, socketRegisterClient) => {
         return;
       }
 
-      console.log("Sending data to frontend clients:", frontendSockets);
+      // console.log("Sending data to frontend clients:", frontendSockets);
       // logic behind it --> may user from same account can be logged in. and watching
       frontendSockets.forEach((id) => {
         socket.to(id).emit("prefData", data);
@@ -49,7 +51,10 @@ const socketsMain = (io, socketRegisterClient) => {
     socket.on("disconnect", async () => {
       const token = auth.token;
       if (!token) return;
-
+      io.to("frontend").emit("isConnected", {
+        runningMachineMacAddress,
+        isLive: false,
+      });
       // Remove this socket from the registry
       if (await socketRegisterClient.has(token, socket.id)) {
         await socketRegisterClient.remove(token, socket.id);
