@@ -2,13 +2,13 @@ const socketsMain = (io, socketRegisterClient) => {
   io.on("connection", async (socket) => {
     // taking auth details from socket
     const auth = socket.handshake.auth;
-
+    // validation
     if (!auth.clientType || !auth.token) {
       console.log("Missing clientType or token. Disconnecting...");
       socket.disconnect();
       return;
     }
-
+    
     // Joining client room according to their type
     if (auth.clientType === "cli") {
       socket.join("cli");

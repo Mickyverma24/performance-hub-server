@@ -1,15 +1,16 @@
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken")
 const { v4: uuidv4 } = require("uuid");
 const User = require("../models/user");
-const generateToken = require("../utils/genrateToken")
+const generateToken = require("../utils/genrateToken");
+
 // managing user login and signup
 
 const expirationTime = "9999d"; // infinte expiration time of jwt token to make user logged in for a long time
-const jwt_secret = process.env.JWT_SECRET
+const jwt_secret = process.env.JWT_SECRET;
 
 const loginController = async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     // finding user by it's email
@@ -20,26 +21,26 @@ const loginController = async (req, res) => {
       password,
       user?.password || ""
     );
-    // if user not exits 
+    // if user not exits
     if (!user) {
       return res.status(404).json({
         error: "No registered user found with the provided credentials.",
       });
     }
-    // password is wrong 
+    // password is wrong
     if (!isCorrectPassword) {
       return res
         .status(401)
         .json({ error: "email or password is not correct..!" });
     }
     // genrate authentication token
-    const auth_token = generateToken(user._id, expirationTime, jwt_secret)
-    // sucssfull resposne 
+    const auth_token = generateToken(user._id, expirationTime, jwt_secret);
+    // sucssfull resposne
     res.status(200).send({
       name: user.name,
       email: user.email,
       apiKey: user.apiKey,
-      authToken: auth_token
+      authToken: auth_token,
     });
   } catch (error) {
     console.log("Error while login :", error.message);
@@ -81,13 +82,13 @@ const signupController = async (req, res) => {
     });
     // saving user in mongodb
     await newUser.save();
-    // authentication token 
-    const auth_token = generateToken(newUser._id, expirationTime, jwt_secret)
+    // authentication token
+    const auth_token = generateToken(newUser._id, expirationTime, jwt_secret);
     res.status(201).json({
       name: newUser.name,
       email: newUser.email,
       apiKey: newUser.apiKey,
-      authToken: auth_token
+      authToken: auth_token,
     });
   } catch (error) {
     console.error("Error while registering new user:", error.message);
@@ -95,4 +96,47 @@ const signupController = async (req, res) => {
   }
 };
 
-module.exports = { loginController, signupController };
+const verificationController = async (req, res) => {
+  try {
+    // 1. Extract and validate headers
+    const authHeader = req.headers.authorization;
+    const apiKey = req.headers["x-api-key"];
+
+    if (!authHeader || !apiKey) {
+      return res.status(401).json({ message: "Missing authentication headers" });
+    }
+
+    const authToken = authHeader.split(" ")[1];
+    if (!authToken) {
+      return res.status(401).json({ message: "Invalid Authorization header format" });
+    }
+
+    // 2. Verify JWT token
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(authToken, jwt_secret);
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token has expired" });
+      }
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    // console.log(decodedToken)
+    // 3. Find and validate user
+    const user = await User.findOne({
+      _id: decodedToken.userId
+    });
+    // console.log(user)
+
+    if (!user) {
+      return res.status(403).json({ message: "Invalid API key or user not active" });
+    }
+
+    // 4. Return success
+    return res.status(200).json({ message: "Authentication successful" });
+  } catch (error) {
+    console.error("Unexpected error during verification:", error.stack || error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+module.exports = { loginController, signupController, verificationController };

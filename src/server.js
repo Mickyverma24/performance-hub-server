@@ -35,9 +35,9 @@ if (cluster.isMaster) {
     console.log("Master process is listening on the, ", PORT);
   });
 
-  for (let i = 0; i < numCPUs; i++) {
+  // for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
-  }
+  // }
 
   cluster.on("exit", (worker) => {
     console.log(`Worker ${worker.process.pid} died`);
