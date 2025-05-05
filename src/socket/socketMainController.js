@@ -27,7 +27,7 @@ const socketsMain = (io, socketRegisterClient) => {
 
     socket.emit(
       "welcome",
-      "Welcome to the performance monitoring server just down our cli match api key and run..."
+      "Welcome to the performance monitoring server just download our cli match api key and run..."
     );
 
     // CLI sends data to frontends matching its token

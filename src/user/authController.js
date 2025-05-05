@@ -52,18 +52,15 @@ const loginController = async (req, res) => {
 const signupController = async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
-
     // Validate input
     if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({ error: "All fields are required." });
     }
-
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ error: "Email already in use." });
+      return res.status(400).json({ error: "Email already in use." });
     }
-
     // Check if passwords match
     if (password !== confirmPassword) {
       return res.status(400).json({ error: "Passwords do not match." });
